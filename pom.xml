@@ -48,4 +48,11 @@
 		</dependency>
 	</dependencies>
 	<packaging>maven-plugin</packaging>
+	<scm>
+		<url>scm:git:https://github.com/kawasima/handlebars-maven-plugin.git</url>
+		<connection>scm:git:https://github.com/kawasima/handlebars-maven-plugin.git</connection>
+		<developerConnection>scm:git:https://github.com/kawasima/handlebars-maven-plugin.git</developerConnection>
+	</scm>
+	<name>handlebars-maven-plugin</name>
+	<url>https://github.com/kawasima/handlebars-maven-plugin/</url>
 </project>

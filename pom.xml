@@ -83,14 +83,13 @@
 			<id>sonatype-nexus-staging</id>
 			<name>Nexus Release Repository</name>
 			<uniqueVersion>false</uniqueVersion>
-			<url>http://oss.sonatype.org/service/local/staging/deploy/maven2/
-            </url>
+			<url>http://oss.sonatype.org/service/local/staging/deploy/maven2</url>
 		</repository>
 		<snapshotRepository>
-			<id>net.unit8.maven.plugins</id>
+			<id>sonatype-nexus-snapshot</id>
 			<name>handlebars-maven-plugin Repository</name>
 			<uniqueVersion>false</uniqueVersion>
-			<url>file:${user.home}/maven2/</url>
+			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
 		</snapshotRepository>
 	</distributionManagement>
 

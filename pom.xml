@@ -6,8 +6,15 @@
 	<artifactId>handlebars-maven-plugin</artifactId>
 	<version>0.1.1</version>
 	<name>handlebars-maven-plugin</name>
+	<description>The maven plugin for precompiling handlbars.js templates.</description>
 	<packaging>maven-plugin</packaging>
 	<url>https://github.com/kawasima/handlebars-maven-plugin/</url>
+
+	<parent>
+		<groupId>org.sonatype.oss</groupId>
+		<artifactId>oss-parent</artifactId>
+		<version>7</version>
+	</parent>
 
 	<licenses>
 		<license>

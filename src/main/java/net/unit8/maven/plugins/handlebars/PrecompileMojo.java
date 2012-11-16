@@ -29,7 +29,11 @@ import org.mozilla.javascript.ScriptableObject;
  *
  */
 public class PrecompileMojo extends AbstractMojo {
-	private static final String[] TEMPLATE_EXTENSIONS = {"html"};
+	
+	/**
+	 * @parameter
+	 */
+	private String[] templateExtensions;
 
 	/**
 	 * @parameter expression="${encoding}" default-value="UTF-8"
@@ -64,6 +68,9 @@ public class PrecompileMojo extends AbstractMojo {
 		}
 		if (preserveHierarchy == null)
 			preserveHierarchy = true;
+			
+		if (templateExtensions == null)
+			templateExtensions = new String[]{"html"};
 
 		try {
 			visit(sourceDirectory);
@@ -81,7 +88,7 @@ public class PrecompileMojo extends AbstractMojo {
 	}
 
 	protected void precompile(File directory) throws IOException {
-		Collection<File> templates = FileUtils.listFiles(directory, TEMPLATE_EXTENSIONS, false);
+		Collection<File> templates = FileUtils.listFiles(directory, templateExtensions, false);
 		if (templates.isEmpty())
 			return;
 

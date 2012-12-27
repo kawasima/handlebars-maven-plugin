@@ -17,6 +17,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.project.MavenProject;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ScriptableObject;
 
@@ -29,7 +30,12 @@ import org.mozilla.javascript.ScriptableObject;
  *
  */
 public class PrecompileMojo extends AbstractMojo {
-	
+    /**
+     * @parameter expression="${project}"
+     * @readonly
+     */
+    private MavenProject project;
+
 	/**
 	 * @parameter
 	 */
@@ -56,6 +62,15 @@ public class PrecompileMojo extends AbstractMojo {
 	 */
 	protected Boolean preserveHierarchy;
 
+    /**
+     * Handlebars script filename
+     *
+     * @paramter expression="${handlebarsName}" default-value="handlebars-1.0.rc.1.min.js"
+     */
+    protected String handlebarsName;
+
+    private HandlebarsEngine handlebarsEngine;
+
 	public void execute() throws MojoExecutionException, MojoFailureException {
 		if (outputDirectory == null)
 			outputDirectory = new File(sourceDirectory.getAbsolutePath());
@@ -72,7 +87,10 @@ public class PrecompileMojo extends AbstractMojo {
 		if (templateExtensions == null)
 			templateExtensions = new String[]{"html"};
 
-		try {
+        handlebarsEngine = new HandlebarsEngine(handlebarsName);
+        handlebarsEngine.setCacheDir(new File(project.getBuild().getDirectory(), "handlebars-maven-plugins/script"));
+
+        try {
 			visit(sourceDirectory);
 		} catch(IOException e) {
 			throw new MojoExecutionException("Failure to precompile handlebars templates.", e);
@@ -102,8 +120,8 @@ public class PrecompileMojo extends AbstractMojo {
 			ScriptableObject global = cx.initStandardObjects();
 
 
-			InputStreamReader in = new InputStreamReader(getClass().getClassLoader().getResourceAsStream("script/handlebars.js"));
-			cx.evaluateReader(global, in, "handlebars.js", 1, null);
+			InputStreamReader in = new InputStreamReader(getClass().getClassLoader().getResourceAsStream("script/handlebars-1.0.rc1.min.js"));
+			cx.evaluateReader(global, in, "handlebars-1.0.rc1.min.js", 1, null);
 			IOUtils.closeQuietly(in);
 
 			for (File template : templates) {

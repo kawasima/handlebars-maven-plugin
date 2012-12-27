@@ -2,6 +2,7 @@
 target
 .project
 .settings
+.idea
 .classpath
 # Package Files #
 *.jar

@@ -88,7 +88,12 @@ public class PrecompileMojo extends AbstractMojo {
 			templateExtensions = new String[]{"html"};
 
         handlebarsEngine = new HandlebarsEngine(handlebarsName);
-        handlebarsEngine.setCacheDir(new File(project.getBuild().getDirectory(), "handlebars-maven-plugins/script"));
+        handlebarsEngine.setEncoding(encoding);
+
+        if (project != null) {
+            handlebarsEngine.setCacheDir(
+                    new File(project.getBuild().getDirectory(), "handlebars-maven-plugins/script"));
+        }
 
         try {
 			visit(sourceDirectory);
@@ -109,32 +114,7 @@ public class PrecompileMojo extends AbstractMojo {
 		Collection<File> templates = FileUtils.listFiles(directory, templateExtensions, false);
 		if (templates.isEmpty())
 			return;
-
-		Context cx = Context.enter();
-		PrintWriter out = null;
-		try {
-			out = new PrintWriter(new OutputStreamWriter(
-					new FileOutputStream(getOutputFile(directory)), encoding));
-			out.print("(function() {\n  var template = Handlebars.template, templates = Handlebars.templates = Handlebars.templates || {};\n");
-			// Rhino for Handlebars Template
-			ScriptableObject global = cx.initStandardObjects();
-
-
-			InputStreamReader in = new InputStreamReader(getClass().getClassLoader().getResourceAsStream("script/handlebars-1.0.rc1.min.js"));
-			cx.evaluateReader(global, in, "handlebars-1.0.rc1.min.js", 1, null);
-			IOUtils.closeQuietly(in);
-
-			for (File template : templates) {
-				String data = FileUtils.readFileToString(template, "UTF-8");
-				ScriptableObject.putProperty(global, "data", data);
-				Object obj = cx.evaluateString(global, "Handlebars.precompile(String(data));", "<cmd>", 1, null);
-				out.println("templates['" + FilenameUtils.getBaseName(template.getName()) + "']=(" + obj.toString() + ");");
-			}
-		} finally {
-			Context.exit();
-			out.println("})();");
-			IOUtils.closeQuietly(out);
-		}
+        handlebarsEngine.precompile(templates, getOutputFile(directory));
 	}
 	private final File getOutputFile(File directory) throws IOException {
 		if (preserveHierarchy) {

@@ -20,6 +20,7 @@ public class PrecompileMojoTest extends PrecompileMojo {
 		mojo = new PrecompileMojo();
 		mojo.sourceDirectory = new File("src/test/resources/templates");
 		mojo.outputDirectory = new File("target/output");
+        mojo.handlebarsName =  "handlebars-1.0.rc1.min.js";
 	}
 
 	@Test

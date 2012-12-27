@@ -21,17 +21,16 @@ package net.unit8.maven.plugins.handlebars;
 
 import net.arnx.jsonic.JSON;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
-import sun.net.www.protocol.file.FileURLConnection;
-
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLSocketFactory;
-import java.io.File;
-import java.io.FileOutputStream;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ScriptableObject;
+import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -40,7 +39,18 @@ import java.util.List;
  * @author kawasima
  */
 public class HandlebarsEngine {
+    /** The cache directory of handlebars script*/
     private File cacheDir;
+
+    /** The encoding of handlebars templates */
+    private String encoding;
+
+    /** The name of handlebars script */
+    private String handlebarsName;
+
+    /** The url of handlebars script */
+    private URL handlebarsUrl;
+
     private static final URI handlebarsDownloadsUri;
     static {
         try {
@@ -52,20 +62,52 @@ public class HandlebarsEngine {
 
     protected HandlebarsEngine() { }
 
-    public HandlebarsEngine(String handlebarsFile) throws MojoExecutionException {
-        URL uri = getClass().getClassLoader().getResource("script/" + handlebarsFile);
-        if (uri == null) {
-            if (new File(cacheDir, handlebarsFile).exists()) {
-
-            } else {
-                fetchHandlebars(handlebarsFile);
+    public HandlebarsEngine(String handlebarsName) throws MojoExecutionException {
+        this.handlebarsName = handlebarsName;
+        handlebarsUrl = getClass().getClassLoader().getResource("script/" + handlebarsName);
+        if (handlebarsUrl == null) {
+            File cacheFile = new File(cacheDir, handlebarsName);
+            if (!cacheFile.exists()) {
+                fetchHandlebars(handlebarsName);
             }
-        } else {
-
+            try {
+                handlebarsUrl = cacheFile.toURI().toURL();
+            } catch (MalformedURLException e) {
+                throw new MojoExecutionException("Invalid handlebars cache file.", e);
+            }
         }
     }
 
-    protected void fetchHandlebars(String handlebarsFile) throws MojoExecutionException {
+    public void precompile(Collection<File> templates, File outputFile) throws IOException {
+        Context cx = Context.enter();
+        PrintWriter out = null;
+        try {
+            out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(outputFile), encoding));
+            out.print("(function() {\n  var template = Handlebars.template, "
+                    + "templates = Handlebars.templates = Handlebars.templates || {};\n");
+            // Rhino for Handlebars Template
+            ScriptableObject global = cx.initStandardObjects();
+
+
+            InputStreamReader in = new InputStreamReader(handlebarsUrl.openStream());
+            cx.evaluateReader(global, in, "handlebarsName", 1, null);
+            IOUtils.closeQuietly(in);
+
+            for (File template : templates) {
+                String data = FileUtils.readFileToString(template, encoding);
+                ScriptableObject.putProperty(global, "data", data);
+                Object obj = cx.evaluateString(global, "Handlebars.precompile(String(data));", "<cmd>", 1, null);
+                out.println("templates['" + FilenameUtils.getBaseName(template.getName()) + "']=(" + obj.toString() + ");");
+            }
+        } finally {
+            Context.exit();
+            out.println("})();");
+            IOUtils.closeQuietly(out);
+        }
+
+    }
+
+    protected void fetchHandlebars(String handlebarsName) throws MojoExecutionException {
         String downloadUrl = null;
         URLConnection conn = null;
         try {
@@ -73,7 +115,7 @@ public class HandlebarsEngine {
             List<GitHubDownloadDto> githubDownloadDtoList = JSON.decode(conn.getInputStream(),
                     (new ArrayList<GitHubDownloadDto>() {}).getClass().getGenericSuperclass());
             for (GitHubDownloadDto githubDownloadDto : githubDownloadDtoList) {
-                if (StringUtils.equals(githubDownloadDto.getName(), handlebarsFile)) {
+                if (StringUtils.equals(githubDownloadDto.getName(), handlebarsName)) {
                     downloadUrl = githubDownloadDto.getHtmlUrl();
                 }
             }
@@ -81,7 +123,7 @@ public class HandlebarsEngine {
              throw new MojoExecutionException("Failure fetch handlebars.", e);
         } finally {
             if (conn != null) {
-                ((HttpsURLConnection) conn).disconnect();
+                ((HttpURLConnection) conn).disconnect();
             }
         }
 
@@ -91,12 +133,17 @@ public class HandlebarsEngine {
                 FileUtils.forceMkdir(cacheDir);
             }
             conn = new URL(downloadUrl).openConnection();
-            IOUtils.copy(conn.getInputStream(), new FileOutputStream(new File(cacheDir, handlebarsFile)));
+            if (((HttpURLConnection) conn).getResponseCode() == 302) {
+                String location = conn.getHeaderField("Location");
+                ((HttpURLConnection) conn).disconnect();
+                conn = new URL(location).openConnection();
+            }
+            IOUtils.copy(conn.getInputStream(), new FileOutputStream(new File(cacheDir, handlebarsName)));
         } catch(Exception e) {
             throw new MojoExecutionException("Failure fetch handlebars.", e);
         } finally {
             if (conn != null) {
-                ((HttpsURLConnection) conn).disconnect();
+                ((HttpURLConnection) conn).disconnect();
             }
         }
     }
@@ -107,5 +154,13 @@ public class HandlebarsEngine {
 
     public void setCacheDir(File cacheDir) {
         this.cacheDir = cacheDir;
+    }
+
+    public String getEncoding() {
+        return encoding;
+    }
+
+    public void setEncoding(String encoding) {
+        this.encoding = encoding;
     }
 }

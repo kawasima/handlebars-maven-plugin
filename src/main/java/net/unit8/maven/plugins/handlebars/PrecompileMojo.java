@@ -1,25 +1,36 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package net.unit8.maven.plugins.handlebars;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.util.Collection;
-
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ScriptableObject;
+
+import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
+import java.util.Collection;
 
 /**
  * Handlebars precompile
@@ -31,22 +42,18 @@ import org.mozilla.javascript.ScriptableObject;
  */
 public class PrecompileMojo extends AbstractMojo {
     /**
-     * @parameter expression="${project}"
+     * @parameter default-value="${project}"
+     * @required
      * @readonly
      */
-    private MavenProject project;
+    protected MavenProject project;
 
 	/**
 	 * @parameter
 	 */
-	private String[] templateExtensions;
+	protected String[] templateExtensions;
 
-	/**
-	 * @parameter expression="${encoding}" default-value="UTF-8"
-	 */
-	private String encoding = "UTF-8";
-
-	/**
+    /**
 	 * @required
 	 * @parameter expression="${sourceDirectory}"
 	 */
@@ -65,9 +72,14 @@ public class PrecompileMojo extends AbstractMojo {
     /**
      * Handlebars script filename
      *
-     * @paramter expression="${handlebarsName}" default-value="handlebars-1.0.rc.1.min.js"
+     * @parameter expression="${handlebarsName}" default-value="handlebars-1.0.rc1.min.js"
      */
     protected String handlebarsName;
+
+    /**
+     * @parameter expression="${encoding}" default-value="UTF-8"
+     */
+    protected String encoding = "UTF-8";
 
     private HandlebarsEngine handlebarsEngine;
 
@@ -85,7 +97,7 @@ public class PrecompileMojo extends AbstractMojo {
 			preserveHierarchy = true;
 			
 		if (templateExtensions == null)
-			templateExtensions = new String[]{"html"};
+			templateExtensions = new String[]{"html", "hbs"};
 
         handlebarsEngine = new HandlebarsEngine(handlebarsName);
         handlebarsEngine.setEncoding(encoding);
@@ -94,6 +106,7 @@ public class PrecompileMojo extends AbstractMojo {
             handlebarsEngine.setCacheDir(
                     new File(project.getBuild().getDirectory(), "handlebars-maven-plugins/script"));
         }
+        handlebarsEngine.startup();
 
         try {
 			visit(sourceDirectory);
@@ -116,7 +129,7 @@ public class PrecompileMojo extends AbstractMojo {
 			return;
         handlebarsEngine.precompile(templates, getOutputFile(directory));
 	}
-	private final File getOutputFile(File directory) throws IOException {
+	private File getOutputFile(File directory) throws IOException {
 		if (preserveHierarchy) {
 			String relativePath = sourceDirectory.toURI().relativize(directory.toURI()).getPath();
 			File outputBaseDir = new File(outputDirectory, relativePath);

@@ -25,8 +25,11 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.plugin.logging.SystemStreamLog;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ScriptableObject;
+
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
@@ -52,6 +55,8 @@ public class HandlebarsEngine {
     private URL handlebarsUrl;
 
     private static final URI handlebarsDownloadsUri;
+    private static final Log LOG = new SystemStreamLog();
+
     static {
         try {
             handlebarsDownloadsUri = new URI("https://api.github.com/repos/wycats/handlebars.js/downloads");
@@ -60,10 +65,11 @@ public class HandlebarsEngine {
         }
     }
 
-    protected HandlebarsEngine() { }
-
     public HandlebarsEngine(String handlebarsName) throws MojoExecutionException {
         this.handlebarsName = handlebarsName;
+    }
+
+    public void startup() throws MojoExecutionException {
         handlebarsUrl = getClass().getClassLoader().getResource("script/" + handlebarsName);
         if (handlebarsUrl == null) {
             File cacheFile = new File(cacheDir, handlebarsName);
@@ -81,6 +87,7 @@ public class HandlebarsEngine {
     public void precompile(Collection<File> templates, File outputFile) throws IOException {
         Context cx = Context.enter();
         PrintWriter out = null;
+        LOG.info("precompile " + templates + " to " + outputFile);
         try {
             out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(outputFile), encoding));
             out.print("(function() {\n  var template = Handlebars.template, "
@@ -90,7 +97,7 @@ public class HandlebarsEngine {
 
 
             InputStreamReader in = new InputStreamReader(handlebarsUrl.openStream());
-            cx.evaluateReader(global, in, "handlebarsName", 1, null);
+            cx.evaluateReader(global, in, handlebarsName, 1, null);
             IOUtils.closeQuietly(in);
 
             for (File template : templates) {
@@ -101,7 +108,8 @@ public class HandlebarsEngine {
             }
         } finally {
             Context.exit();
-            out.println("})();");
+            if (out != null)
+                out.println("})();");
             IOUtils.closeQuietly(out);
         }
 
@@ -138,6 +146,7 @@ public class HandlebarsEngine {
                 ((HttpURLConnection) conn).disconnect();
                 conn = new URL(location).openConnection();
             }
+            LOG.info("Fetch handlebars.js from GitHub ("+ conn.getURL() +")");
             IOUtils.copy(conn.getInputStream(), new FileOutputStream(new File(cacheDir, handlebarsName)));
         } catch(Exception e) {
             throw new MojoExecutionException("Failure fetch handlebars.", e);

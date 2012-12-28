@@ -28,7 +28,7 @@ import java.io.File;
 public class HanldebarsEngineTest {
     @Test
     public void fetchHandlebars() throws MojoExecutionException {
-        HandlebarsEngine engine = new HandlebarsEngine();
+        HandlebarsEngine engine = new HandlebarsEngine("handlebars-0.9.0.pre.js");
         engine.setCacheDir(new File("target"));
         engine.fetchHandlebars("handlebars-0.9.0.pre.js");
     }

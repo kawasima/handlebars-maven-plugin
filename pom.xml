@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>net.unit8.maven.plugins</groupId>
 	<artifactId>handlebars-maven-plugin</artifactId>
-	<version>0.2.0-SNAPSHOT</version>
+	<version>0.2.0</version>
 	<name>handlebars-maven-plugin</name>
 	<description>The maven plugin for precompiling handlbars.js templates.</description>
 	<packaging>maven-plugin</packaging>

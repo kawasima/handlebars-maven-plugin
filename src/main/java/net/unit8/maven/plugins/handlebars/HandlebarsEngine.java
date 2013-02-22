@@ -84,7 +84,7 @@ public class HandlebarsEngine {
         }
     }
 
-    public void precompile(Collection<File> templates, File outputFile) throws IOException {
+    public void precompile(Collection<File> templates, File outputFile, boolean purgeWhitespace) throws IOException {
         Context cx = Context.enter();
         PrintWriter out = null;
         LOG.info("precompile " + templates + " to " + outputFile);
@@ -94,14 +94,16 @@ public class HandlebarsEngine {
                     + "templates = Handlebars.templates = Handlebars.templates || {};\n");
             // Rhino for Handlebars Template
             ScriptableObject global = cx.initStandardObjects();
-
-
             InputStreamReader in = new InputStreamReader(handlebarsUrl.openStream());
             cx.evaluateReader(global, in, handlebarsName, 1, null);
             IOUtils.closeQuietly(in);
 
             for (File template : templates) {
                 String data = FileUtils.readFileToString(template, encoding);
+
+                if (purgeWhitespace)
+                    data = StringUtils.replaceEach(data, new String[]{"\n", "\r", "\t"}, new String[]{"", "", ""});
+
                 ScriptableObject.putProperty(global, "data", data);
                 Object obj = cx.evaluateString(global, "Handlebars.precompile(String(data));", "<cmd>", 1, null);
                 out.println("templates['" + FilenameUtils.getBaseName(template.getName()) + "']=(" + obj.toString() + ");");

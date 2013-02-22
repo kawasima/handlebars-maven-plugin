@@ -53,6 +53,12 @@ public class PrecompileMojo extends AbstractMojo {
 	 */
 	protected String[] templateExtensions;
 
+
+    /**
+     * @parameter
+     */
+    protected Boolean purgeWhitespace;
+
     /**
 	 * @required
 	 * @parameter expression="${sourceDirectory}"
@@ -99,8 +105,13 @@ public class PrecompileMojo extends AbstractMojo {
 		if (templateExtensions == null)
 			templateExtensions = new String[]{"html", "hbs"};
 
+        if(purgeWhitespace == null)
+            purgeWhitespace = false;
+
         handlebarsEngine = new HandlebarsEngine(handlebarsName);
         handlebarsEngine.setEncoding(encoding);
+
+
 
         if (project != null) {
             handlebarsEngine.setCacheDir(
@@ -127,7 +138,7 @@ public class PrecompileMojo extends AbstractMojo {
 		Collection<File> templates = FileUtils.listFiles(directory, templateExtensions, false);
 		if (templates.isEmpty())
 			return;
-        handlebarsEngine.precompile(templates, getOutputFile(directory));
+        handlebarsEngine.precompile(templates, getOutputFile(directory), purgeWhitespace);
 	}
 	private File getOutputFile(File directory) throws IOException {
 		if (preserveHierarchy) {

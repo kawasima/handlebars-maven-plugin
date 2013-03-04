@@ -1,6 +1,5 @@
 package net.unit8.maven.plugins.handlebars;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -76,7 +75,7 @@ public class PrecompileMojoTest extends PrecompileMojo {
                 IOUtils.closeQuietly(inSource);
             }
 
-            Object obj = cx.evaluateString(global, "Handlebars.template(Handlebars.templates['root1'])({hello:'I am '})", "<inline>", 1, null);
+            Object obj = cx.evaluateString(global, "Handlebars.templates['root1']({hello:'I am '})", "<inline>", 1, null);
             assertEquals("I am root1", obj.toString());
         } finally {
             Context.exit();
@@ -86,6 +85,6 @@ public class PrecompileMojoTest extends PrecompileMojo {
 
 	@After
 	public void tearDown() throws IOException {
-		FileUtils.forceDelete(mojo.outputDirectory);
+		//FileUtils.forceDelete(mojo.outputDirectory);
 	}
 }

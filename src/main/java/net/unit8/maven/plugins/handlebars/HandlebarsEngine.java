@@ -106,7 +106,7 @@ public class HandlebarsEngine {
 
                 ScriptableObject.putProperty(global, "data", data);
                 Object obj = cx.evaluateString(global, "Handlebars.precompile(String(data));", "<cmd>", 1, null);
-                out.println("templates['" + FilenameUtils.getBaseName(template.getName()) + "']=(" + obj.toString() + ");");
+                out.println("templates['" + FilenameUtils.getBaseName(template.getName()) + "']=template(" + obj.toString() + ");");
             }
         } finally {
             Context.exit();

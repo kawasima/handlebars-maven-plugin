@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>net.unit8.maven.plugins</groupId>
 	<artifactId>handlebars-maven-plugin</artifactId>
-	<version>0.3.0</version>
+	<version>0.3.1</version>
 	<name>handlebars-maven-plugin</name>
 	<description>The maven plugin for precompiling handlbars.js templates.</description>
 	<packaging>maven-plugin</packaging>
@@ -66,11 +66,6 @@
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-project</artifactId>
             <version>2.0.9</version>
-        </dependency>
-        <dependency>
-            <groupId>net.arnx</groupId>
-            <artifactId>jsonic</artifactId>
-            <version>1.3.0</version>
         </dependency>
 		<dependency>
 			<groupId>commons-io</groupId>

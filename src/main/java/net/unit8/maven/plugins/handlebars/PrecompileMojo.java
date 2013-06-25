@@ -78,9 +78,9 @@ public class PrecompileMojo extends AbstractMojo {
     /**
      * Handlebars script filename
      *
-     * @parameter expression="${handlebarsName}" default-value="handlebars-1.0.rc1.min.js"
+     * @parameter expression="${handlebarsVersion}" default-value="1.0.0"
      */
-    protected String handlebarsName;
+    protected String handlebarsVersion;
 
     /**
      * @parameter expression="${encoding}" default-value="UTF-8"
@@ -108,7 +108,7 @@ public class PrecompileMojo extends AbstractMojo {
         if(purgeWhitespace == null)
             purgeWhitespace = false;
 
-        handlebarsEngine = new HandlebarsEngine(handlebarsName);
+        handlebarsEngine = new HandlebarsEngine(handlebarsVersion);
         handlebarsEngine.setEncoding(encoding);
 
 

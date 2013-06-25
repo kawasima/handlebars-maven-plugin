@@ -26,7 +26,7 @@ public class PrecompileMojoTest extends PrecompileMojo {
 		mojo = new PrecompileMojo();
 		mojo.sourceDirectory = new File("src/test/resources/templates");
 		mojo.outputDirectory = new File("target/output");
-        mojo.handlebarsName =  "handlebars-1.0.rc1.min.js";
+        mojo.handlebarsVersion =  "1.0.0";
 	}
 
 	@Test
@@ -58,12 +58,12 @@ public class PrecompileMojoTest extends PrecompileMojo {
         Context cx = Context.enter();
         try {
             ScriptableObject global = cx.initStandardObjects();
-            URL handlebarsUrl = getClass().getClassLoader().getResource("script/handlebars-1.0.rc1.min.js");
+            URL handlebarsUrl = getClass().getClassLoader().getResource("script/1.0.0");
             if (handlebarsUrl == null)
                 throw new IllegalArgumentException("can't find resource handlebars.");
             InputStreamReader in = new InputStreamReader(handlebarsUrl.openStream());
             try {
-                cx.evaluateReader(global, in, handlebarsName, 1, null);
+                cx.evaluateReader(global, in, handlebarsVersion, 1, null);
             } finally {
                 IOUtils.closeQuietly(in);
             }

@@ -19,7 +19,6 @@
 
 package net.unit8.maven.plugins.handlebars;
 
-import net.arnx.jsonic.JSON;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -32,9 +31,7 @@ import org.mozilla.javascript.ScriptableObject;
 
 import java.io.*;
 import java.net.*;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 /**
  * Handlebars script engine.
@@ -49,32 +46,23 @@ public class HandlebarsEngine {
     private String encoding;
 
     /** The name of handlebars script */
-    private String handlebarsName;
+    private String handlebarsVersion;
 
     /** The url of handlebars script */
     private URL handlebarsUrl;
 
-    private static final URI handlebarsDownloadsUri;
     private static final Log LOG = new SystemStreamLog();
 
-    static {
-        try {
-            handlebarsDownloadsUri = new URI("https://api.github.com/repos/wycats/handlebars.js/downloads");
-        } catch(URISyntaxException e) {
-            throw new IllegalArgumentException("GitHub url is invalid?");
-        }
-    }
-
-    public HandlebarsEngine(String handlebarsName) throws MojoExecutionException {
-        this.handlebarsName = handlebarsName;
+    public HandlebarsEngine(String handlebarsVersion) throws MojoExecutionException {
+        this.handlebarsVersion = handlebarsVersion;
     }
 
     public void startup() throws MojoExecutionException {
-        handlebarsUrl = getClass().getClassLoader().getResource("script/" + handlebarsName);
+        handlebarsUrl = getClass().getClassLoader().getResource("script/1.0.0");
         if (handlebarsUrl == null) {
-            File cacheFile = new File(cacheDir, handlebarsName);
+            File cacheFile = new File(cacheDir, handlebarsVersion);
             if (!cacheFile.exists()) {
-                fetchHandlebars(handlebarsName);
+                fetchHandlebars(handlebarsVersion);
             }
             try {
                 handlebarsUrl = cacheFile.toURI().toURL();
@@ -95,7 +83,7 @@ public class HandlebarsEngine {
             // Rhino for Handlebars Template
             ScriptableObject global = cx.initStandardObjects();
             InputStreamReader in = new InputStreamReader(handlebarsUrl.openStream());
-            cx.evaluateReader(global, in, handlebarsName, 1, null);
+            cx.evaluateReader(global, in, handlebarsVersion, 1, null);
             IOUtils.closeQuietly(in);
 
             for (File template : templates) {
@@ -117,39 +105,21 @@ public class HandlebarsEngine {
 
     }
 
-    protected void fetchHandlebars(String handlebarsName) throws MojoExecutionException {
-        String downloadUrl = null;
+    protected void fetchHandlebars(String handlebarsVersion) throws MojoExecutionException {
         URLConnection conn = null;
-        try {
-            conn = handlebarsDownloadsUri.toURL().openConnection();
-            List<GitHubDownloadDto> githubDownloadDtoList = JSON.decode(conn.getInputStream(),
-                    (new ArrayList<GitHubDownloadDto>() {}).getClass().getGenericSuperclass());
-            for (GitHubDownloadDto githubDownloadDto : githubDownloadDtoList) {
-                if (StringUtils.equals(githubDownloadDto.getName(), handlebarsName)) {
-                    downloadUrl = githubDownloadDto.getHtmlUrl();
-                }
-            }
-        } catch(Exception e) {
-             throw new MojoExecutionException("Failure fetch handlebars.", e);
-        } finally {
-            if (conn != null) {
-                ((HttpURLConnection) conn).disconnect();
-            }
-        }
 
-        conn = null;
         try {
             if (!cacheDir.exists()) {
                 FileUtils.forceMkdir(cacheDir);
             }
-            conn = new URL(downloadUrl).openConnection();
+            conn = new URL("https://raw.github.com/wycats/handlebars.js/" + handlebarsVersion + "/dist/handlebars.js").openConnection();
             if (((HttpURLConnection) conn).getResponseCode() == 302) {
                 String location = conn.getHeaderField("Location");
                 ((HttpURLConnection) conn).disconnect();
                 conn = new URL(location).openConnection();
             }
             LOG.info("Fetch handlebars.js from GitHub ("+ conn.getURL() +")");
-            IOUtils.copy(conn.getInputStream(), new FileOutputStream(new File(cacheDir, handlebarsName)));
+            IOUtils.copy(conn.getInputStream(), new FileOutputStream(new File(cacheDir, handlebarsVersion)));
         } catch(Exception e) {
             throw new MojoExecutionException("Failure fetch handlebars.", e);
         } finally {

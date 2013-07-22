@@ -28,13 +28,12 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugin.logging.SystemStreamLog;
 import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 
 import java.io.*;
 import java.net.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 /**
  * Handlebars script engine.
@@ -56,6 +55,8 @@ public class HandlebarsEngine {
 
     private static final URI handlebarsDownloadsUri;
     private static final Log LOG = new SystemStreamLog();
+    private List<String> knownHelpers = Collections.emptyList();
+    private Boolean knownHelpersOnly;
 
     static {
         try {
@@ -98,6 +99,9 @@ public class HandlebarsEngine {
             cx.evaluateReader(global, in, handlebarsName, 1, null);
             IOUtils.closeQuietly(in);
 
+            Scriptable options = new Options(new KnownHelpers(knownHelpers), knownHelpersOnly);
+            ScriptableObject.putProperty(global, "options", options);
+
             for (File template : templates) {
                 String data = FileUtils.readFileToString(template, encoding);
 
@@ -105,7 +109,8 @@ public class HandlebarsEngine {
                     data = StringUtils.replaceEach(data, new String[]{"\n", "\r", "\t"}, new String[]{"", "", ""});
 
                 ScriptableObject.putProperty(global, "data", data);
-                Object obj = cx.evaluateString(global, "Handlebars.precompile(String(data));", "<cmd>", 1, null);
+
+                Object obj = cx.evaluateString(global, "Handlebars.precompile(String(data), options);", "<cmd>", 1, null);
                 out.println("templates['" + FilenameUtils.getBaseName(template.getName()) + "']=template(" + obj.toString() + ");");
             }
         } finally {
@@ -173,5 +178,14 @@ public class HandlebarsEngine {
 
     public void setEncoding(String encoding) {
         this.encoding = encoding;
+    }
+
+    public void setKnownHelpers(List<String> knownHelpers) {
+        this.knownHelpers = knownHelpers;
+    }
+
+
+    public void setKnownHelpersOnly(Boolean knownHelpersOnly) {
+        this.knownHelpersOnly = knownHelpersOnly;
     }
 }

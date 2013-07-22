@@ -31,6 +31,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Handlebars precompile
@@ -70,6 +71,16 @@ public class PrecompileMojo extends AbstractMojo {
 	 */
 	protected File outputDirectory;
 
+    /**
+     * @parameter expression="${knownHelpers}"
+     */
+    protected List<String> knownHelpers;
+
+    /**
+     * @parameter expression="${knownHelpersOnly}"
+     */
+    protected Boolean knownHelpersOnly;
+
 	/**
 	 * @parameter expression="${preserveHierarchy}"
 	 */
@@ -78,7 +89,7 @@ public class PrecompileMojo extends AbstractMojo {
     /**
      * Handlebars script filename
      *
-     * @parameter expression="${handlebarsName}" default-value="handlebars-1.0.rc1.min.js"
+     * @parameter expression="${handlebarsName}" default-value="handlebars-1.0.12.min.js"
      */
     protected String handlebarsName;
 
@@ -90,6 +101,7 @@ public class PrecompileMojo extends AbstractMojo {
     private HandlebarsEngine handlebarsEngine;
 
 	public void execute() throws MojoExecutionException, MojoFailureException {
+
 		if (outputDirectory == null)
 			outputDirectory = new File(sourceDirectory.getAbsolutePath());
 		if (!outputDirectory.exists()) {
@@ -110,8 +122,12 @@ public class PrecompileMojo extends AbstractMojo {
 
         handlebarsEngine = new HandlebarsEngine(handlebarsName);
         handlebarsEngine.setEncoding(encoding);
+        handlebarsEngine.setKnownHelpersOnly(knownHelpersOnly);
 
-
+        if (knownHelpers != null) {
+            getLog().debug("Known helpers " + knownHelpers.toString());
+            handlebarsEngine.setKnownHelpers(knownHelpers);
+        }
 
         if (project != null) {
             handlebarsEngine.setCacheDir(
@@ -140,6 +156,7 @@ public class PrecompileMojo extends AbstractMojo {
 			return;
         handlebarsEngine.precompile(templates, getOutputFile(directory), purgeWhitespace);
 	}
+
 	private File getOutputFile(File directory) throws IOException {
 		if (preserveHierarchy) {
 			String relativePath = sourceDirectory.toURI().relativize(directory.toURI()).getPath();

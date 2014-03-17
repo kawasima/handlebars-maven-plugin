@@ -1,5 +1,6 @@
 package net.unit8.maven.plugins.handlebars;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -7,6 +8,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mozilla.javascript.Context;
+import org.mozilla.javascript.JavaScriptException;
 import org.mozilla.javascript.ScriptableObject;
 
 import java.io.File;
@@ -14,9 +16,10 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class PrecompileMojoTest extends PrecompileMojo {
 	private PrecompileMojo mojo;
@@ -26,7 +29,8 @@ public class PrecompileMojoTest extends PrecompileMojo {
 		mojo = new PrecompileMojo();
 		mojo.sourceDirectory = new File("src/test/resources/templates");
 		mojo.outputDirectory = new File("target/output");
-        mojo.handlebarsName =  "handlebars-1.0.rc1.min.js";
+        mojo.handlebarsName =  "handlebars-1.0.12.min.js";
+        mojo.knownHelpers = Arrays.asList("helper");
 	}
 
 	@Test
@@ -38,7 +42,19 @@ public class PrecompileMojoTest extends PrecompileMojo {
 		assertTrue(new File(mojo.outputDirectory, "hoge-fuga.js").exists());
 	}
 
-	@Test
+    @Test
+    public void testKnownHelpersOnly() throws MojoExecutionException, MojoFailureException {
+        mojo.knownHelpers = Collections.emptyList();
+        mojo.knownHelpersOnly = true;
+        try {
+            mojo.execute();
+            fail();
+        } catch (JavaScriptException e) { }
+        assertFalse(new File(mojo.outputDirectory, "with_helper.js").exists());
+    }
+
+
+    @Test
 	public void testPreserveHierarchy() throws MojoExecutionException, MojoFailureException {
 		mojo.preserveHierarchy = true;
 		mojo.execute();
@@ -58,7 +74,7 @@ public class PrecompileMojoTest extends PrecompileMojo {
         Context cx = Context.enter();
         try {
             ScriptableObject global = cx.initStandardObjects();
-            URL handlebarsUrl = getClass().getClassLoader().getResource("script/handlebars-1.0.rc1.min.js");
+            URL handlebarsUrl = getClass().getClassLoader().getResource("script/handlebars-1.0.12.min.js");
             if (handlebarsUrl == null)
                 throw new IllegalArgumentException("can't find resource handlebars.");
             InputStreamReader in = new InputStreamReader(handlebarsUrl.openStream());
@@ -85,6 +101,6 @@ public class PrecompileMojoTest extends PrecompileMojo {
 
 	@After
 	public void tearDown() throws IOException {
-		//FileUtils.forceDelete(mojo.outputDirectory);
+		FileUtils.forceDelete(mojo.outputDirectory);
 	}
 }
